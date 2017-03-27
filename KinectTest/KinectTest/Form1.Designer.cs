@@ -43,6 +43,7 @@
             this.palmDownRadio = new System.Windows.Forms.RadioButton();
             this.palmUpRadio = new System.Windows.Forms.RadioButton();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.statusLabel = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -185,11 +186,21 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "groupBox1";
             // 
+            // statusLabel
+            // 
+            this.statusLabel.AutoSize = true;
+            this.statusLabel.Location = new System.Drawing.Point(584, 292);
+            this.statusLabel.Name = "statusLabel";
+            this.statusLabel.Size = new System.Drawing.Size(81, 17);
+            this.statusLabel.TabIndex = 15;
+            this.statusLabel.Text = "Drone is off";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(955, 335);
+            this.Controls.Add(this.statusLabel);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
@@ -223,6 +234,7 @@
         private System.Windows.Forms.RadioButton palmDownRadio;
         private System.Windows.Forms.RadioButton palmUpRadio;
         private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Label statusLabel;
     }
 }
 

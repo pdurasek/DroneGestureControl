@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Kinect;
+using Timer = System.Threading.Timer;
 
 namespace KinectTest
 {
@@ -16,6 +17,13 @@ namespace KinectTest
         private KinectSensor kinectSensor = null;
         private BodyFrameReader bodyFrameReader = null;
         private Body[] bodies = null;
+        private Timer gestureTimer = null;
+        private bool initialScan = false;
+        private TimeSpan cycleSpan = new TimeSpan(0, 0, 0, 0, 250);
+        private HandCoordinate handCoordinate = null;
+        private bool isInMotion = false;
+        private float changeSum = 0;
+        public readonly double ErrorMargin = 0.03;
 
         public Form1()
         {
@@ -61,7 +69,8 @@ namespace KinectTest
                     foreach (Body body in bodies)
                     {
                         if (body.IsTracked)
-                        {
+                        {                            
+
                             IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
                             Dictionary<JointType, Point> jointPoints = new Dictionary<JointType, Point>();
 
@@ -89,6 +98,18 @@ namespace KinectTest
                             lhy.Text = rt_distance_y.ToString("#.##");
                             lhz.Text = rt_distance_z.ToString("#.##");
 
+                            if (!initialScan)
+                            {
+                                gestureTimer = new Timer(x =>
+                                {
+                                    //Code for snapshots
+                                    CheckMotionChange(rt_distance_x, rt_distance_y, rt_distance_z);
+
+                                }, null, 0, cycleSpan.Milliseconds);
+
+                                initialScan = true;
+                            }
+
                             if (rt_distance_x < ms_distance_x)
                             {
                                 palmDownRadio.Checked = true;
@@ -104,6 +125,40 @@ namespace KinectTest
             }
         }
 
+        private void CheckMotionChange(float x, float y, float z)
+        {
+            if (handCoordinate != null)
+            {
+                if (handCoordinate.x < x && handCoordinate.y - y < ErrorMargin && handCoordinate.z - z < ErrorMargin)
+                {
+                    if (x - handCoordinate.x >= ErrorMargin)
+                    {
+                        isInMotion = true;
+                        changeSum += x - handCoordinate.x;
+                    }
+                    else
+                    {
+                        isInMotion = false;
+                        changeSum = 0;
+                    }
+                }
+                else
+                {
+                    isInMotion = false;
+                    changeSum = 0;
+                }
+                
+            }
+
+            if (changeSum >= 0.08 && isInMotion)
+            {
+                statusLabel.Text = "Trigger reached - Turning on the drone!";
+                changeSum = 0;
+                isInMotion = false;
+            }
+            handCoordinate = new HandCoordinate(x, y, z);
+        }
+
         private void label1_Click(object sender, EventArgs e)
         {
 
@@ -113,5 +168,21 @@ namespace KinectTest
         {
 
         }
+    }
+
+    class HandCoordinate
+    {
+
+        public float x { get; set; }
+        public float y { get; set; }
+        public float z { get; set; }
+        public HandCoordinate(float x, float y, float z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        
     }    
 }
