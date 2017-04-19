@@ -24,6 +24,11 @@ namespace KinectTest
         private bool isInMotion = false;
         private float changeSum = 0;
         public readonly double ErrorMargin = 0.03;
+        private float rightHandCurrentX, rightHandCurrentY, rightHandCurrentZ = 0;
+        private float rightThumbCurrentX, rightThumbCurrentY, rightThumbCurrentZ = 0;
+        // Hand origin locations
+        private float rightHandOriginX, rightHandOriginY, rightHandOriginZ = 0;
+
 
         public Form1()
         {
@@ -78,44 +83,51 @@ namespace KinectTest
                             Joint leftHand = joints[JointType.HandLeft];
                             Joint rightThumb = joints[JointType.ThumbRight];
 
-                            float ms_distance_x = rightHand.Position.X;
-                            float ms_distance_y = rightHand.Position.Y;
-                            float ms_distance_z = rightHand.Position.Z;
+                            rightHandCurrentX = rightHand.Position.X;
+                            rightHandCurrentY = rightHand.Position.Y;
+                            rightHandCurrentZ = rightHand.Position.Z;
 
                             float lh_distance_x = leftHand.Position.X;
                             float lh_distance_y = leftHand.Position.Y;
                             float lh_distance_z = leftHand.Position.Z;
 
-                            float rt_distance_x = rightThumb.Position.X;
-                            float rt_distance_y = rightThumb.Position.Y;
-                            float rt_distance_z = rightThumb.Position.Z;
+                            rightThumbCurrentX = rightThumb.Position.X;
+                            rightThumbCurrentY = rightThumb.Position.Y;
+                            rightThumbCurrentZ = rightThumb.Position.Z;
 
-                            midSpineX.Text = ms_distance_x.ToString("#.##");
-                            midSpineY.Text = ms_distance_y.ToString("#.##");
-                            midSpineZ.Text = ms_distance_z.ToString("#.##");
+                            midSpineX.Text = rightHandCurrentX.ToString("#.##");
+                            midSpineY.Text = rightHandCurrentY.ToString("#.##");
+                            midSpineZ.Text = rightHandCurrentZ.ToString("#.##");
 
-                            lhx.Text = rt_distance_x.ToString("#.##");
-                            lhy.Text = rt_distance_y.ToString("#.##");
-                            lhz.Text = rt_distance_z.ToString("#.##");
+                            lhx.Text = rightThumbCurrentX.ToString("#.##");
+                            lhy.Text = rightThumbCurrentY.ToString("#.##");
+                            lhz.Text = rightThumbCurrentZ.ToString("#.##");
 
                             if (!initialScan)
                             {
                                 gestureTimer = new Timer(x =>
                                 {
                                     //Code for snapshots
-                                    CheckMotionChange(rt_distance_x, rt_distance_y, rt_distance_z);
+                                    if (!isInMotion)
+                                    {
+                                        Console.WriteLine("dickerino");
+                                        rightHandOriginX = rightHandCurrentX; // Get x of the hand for the motion
+                                        rightHandOriginY = rightHandCurrentY;
+                                        rightHandOriginZ = rightHandCurrentZ;
+                                    }
+                                    CheckMotionChange();
 
                                 }, null, 0, cycleSpan.Milliseconds);
 
                                 initialScan = true;
                             }
 
-                            if (rt_distance_x < ms_distance_x)
+                            if (rightThumbCurrentX < rightHandCurrentX)
                             {
                                 palmDownRadio.Checked = true;
                             }
 
-                            if (rt_distance_x > ms_distance_x)
+                            if (rightThumbCurrentX > rightHandCurrentX)
                             {
                                 palmUpRadio.Checked = true;
                             }
@@ -125,16 +137,28 @@ namespace KinectTest
             }
         }
 
-        private void CheckMotionChange(float x, float y, float z)
+        private void CheckMotionChange()
         {
-            if (handCoordinate != null)
+            Console.WriteLine("x input: " + rightHandCurrentX + ", y input: " + rightHandCurrentY + ", z input: " + rightHandCurrentZ);
+            //Console.WriteLine("xTest: " + xtest);
+            //Console.WriteLine("thumbX: " + thumbX);
+            if (handCoordinate != null) 
             {
-                if (handCoordinate.x < x && handCoordinate.y - y < ErrorMargin && handCoordinate.z - z < ErrorMargin)
+                //Console.WriteLine("a");
+                //Console.WriteLine(handCoordinate.x < xtest);
+                //Console.WriteLine(Math.Abs(handCoordinate.x - x));
+                //Console.WriteLine(Math.Abs(handCoordinate.y - y));
+                //Console.WriteLine(Math.Abs(handCoordinate.z - z));
+                if (handCoordinate.oldThumbX < rightThumbCurrentX && Math.Abs(handCoordinate.x - rightHandCurrentX) < ErrorMargin &&
+                    Math.Abs(handCoordinate.y - rightHandCurrentY) < ErrorMargin && Math.Abs(handCoordinate.z - rightHandCurrentZ) < ErrorMargin)
                 {
-                    if (x - handCoordinate.x >= ErrorMargin)
+                    Console.WriteLine("b");
+                    float xChange = Math.Abs(rightThumbCurrentX - handCoordinate.x);
+                    if (xChange >= ErrorMargin)
                     {
+                        Console.WriteLine("c");
                         isInMotion = true;
-                        changeSum += x - handCoordinate.x;
+                        changeSum += xChange;
                     }
                     else
                     {
@@ -152,11 +176,26 @@ namespace KinectTest
 
             if (changeSum >= 0.08 && isInMotion)
             {
-                statusLabel.Text = "Trigger reached - Turning on the drone!";
+                Console.WriteLine("SUCCESS");
+                sendMethod("Trigger reached - Turning on the drone!");
                 changeSum = 0;
                 isInMotion = false;
             }
-            handCoordinate = new HandCoordinate(x, y, z);
+            else
+            {
+                sendMethod("Waiting for trigger");
+                Console.WriteLine(changeSum);
+            }
+            handCoordinate = new HandCoordinate(rightHandCurrentX, rightHandCurrentY, rightHandCurrentZ, rightThumbCurrentX);
+        }
+
+        void sendMethod(string text)
+        {
+            MethodInvoker mi = delegate {
+                statusLabel.Text = text;
+            };
+            if (InvokeRequired)
+                this.Invoke(mi);
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -176,11 +215,13 @@ namespace KinectTest
         public float x { get; set; }
         public float y { get; set; }
         public float z { get; set; }
-        public HandCoordinate(float x, float y, float z)
+        public float oldThumbX { get; set; }
+        public HandCoordinate(float x, float y, float z, float oldThumbX)
         {
             this.x = x;
             this.y = y;
             this.z = z;
+            this.oldThumbX = oldThumbX;
         }
 
         
