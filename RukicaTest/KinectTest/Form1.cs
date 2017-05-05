@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Kinect;
 using Timer = System.Threading.Timer;
+using LightBuzz.Vitruvius;
 
 namespace KinectTest
 {
@@ -42,7 +43,7 @@ namespace KinectTest
       {
          InitializeComponent();
          InitializeKinect();
-         port.Open();
+         //port.Open();
          //port.DataReceived += (usb, a) =>
          //{
          //    byte[] buffer = new byte[port.BytesToRead];
@@ -90,6 +91,8 @@ namespace KinectTest
                {
                   if (body.IsTracked)
                   {
+                     //GestureRecognized(sender, e);
+
                      IReadOnlyDictionary<JointType, Joint> joints = body.Joints;
                      Dictionary<JointType, Point> jointPoints = new Dictionary<JointType, Point>();
 

@@ -34,7 +34,7 @@ namespace KinectSimpleGesture
         /// Updates the current gesture.
         /// </summary>
         /// <param name="skeleton">The skeleton data.</param>
-        public void Update(Skeleton skeleton)
+        public void Update(Body skeleton)
         {
             GesturePartResult result = _segments[_currentSegment].Update(skeleton);
 
